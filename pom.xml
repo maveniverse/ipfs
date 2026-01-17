@@ -35,6 +35,7 @@
   </licenses>
 
   <modules>
+    <module>core</module>
     <module>transport-ipfs</module>
     <module>extension3</module>
   </modules>
@@ -75,6 +76,11 @@
   <dependencyManagement>
     <dependencies>
       <!-- Reactor -->
+      <dependency>
+        <groupId>eu.maveniverse.maven.ipfs</groupId>
+        <artifactId>core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>eu.maveniverse.maven.ipfs</groupId>
         <artifactId>transport-ipfs</artifactId>

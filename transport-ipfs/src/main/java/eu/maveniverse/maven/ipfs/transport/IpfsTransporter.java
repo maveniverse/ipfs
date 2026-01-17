@@ -9,9 +9,11 @@ package eu.maveniverse.maven.ipfs.transport;
 
 import static java.util.Objects.requireNonNull;
 
+import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Optional;
 import org.eclipse.aether.spi.connector.transport.AbstractTransporter;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.PeekTask;
@@ -25,11 +27,11 @@ import org.slf4j.LoggerFactory;
 final class IpfsTransporter extends AbstractTransporter {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IpfsNamespacePublisher publisher;
-    private final boolean publishIpns;
+    private final boolean publishNamespace;
 
-    IpfsTransporter(IpfsNamespacePublisher publisher, boolean publishIpns) {
+    IpfsTransporter(IpfsNamespacePublisher publisher, boolean publishNamespace) {
         this.publisher = requireNonNull(publisher);
-        this.publishIpns = publishIpns;
+        this.publishNamespace = publishNamespace;
     }
 
     @Override
@@ -42,13 +44,26 @@ final class IpfsTransporter extends AbstractTransporter {
 
     @Override
     protected void implPeek(PeekTask task) throws Exception {
-        publisher.stat(task.getLocation().getPath());
+        if (publisher.stat(task.getLocation().getPath()).isEmpty()) {
+            throw new ResourceNotFoundException();
+        }
     }
 
     @Override
     protected void implGet(GetTask task) throws Exception {
-        String path = task.getLocation().getPath();
-        utilGet(task, publisher.get(path), true, publisher.size(path), false);
+        Optional<IpfsNamespacePublisher.Stat> stat =
+                publisher.stat(task.getLocation().getPath());
+        if (stat.isPresent() && stat.orElseThrow().file()) {
+            IpfsNamespacePublisher.Stat node = stat.orElseThrow();
+            Optional<InputStream> nodeContent = publisher.get(node.hash());
+            if (nodeContent.isPresent()) {
+                try (InputStream content = nodeContent.orElseThrow()) {
+                    utilGet(task, content, true, node.size(), false);
+                    return;
+                }
+            }
+        }
+        throw new ResourceNotFoundException();
     }
 
     @Override
@@ -61,7 +76,7 @@ final class IpfsTransporter extends AbstractTransporter {
 
     @Override
     protected void implClose() {
-        if (publishIpns) {
+        if (publishNamespace) {
             try {
                 if (!publisher.publishNamespace()) {
                     logger.warn("IPNS publish unsuccessful, see logs above for reasons");

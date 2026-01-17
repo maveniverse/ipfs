@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import eu.maveniverse.maven.ipfs.core.internal.IpfsFactoryImpl;
+import eu.maveniverse.maven.ipfs.core.internal.IpfsNamespacePublisherRegistryImpl;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -93,15 +95,15 @@ public class IpfsTransporterTest {
             transporter = null;
         }
         if (factory == null) {
-            factory = new IpfsTransporterFactory();
+            factory = new IpfsTransporterFactory(new IpfsNamespacePublisherRegistryImpl(new IpfsFactoryImpl()));
         }
         if (session == null) {
             session = TestUtils.newSession();
-            // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
-            session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
+            session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
+            // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
             session.setConfigProperty("aether.transport.ipfs.filesPrefix", "tmp");
-            session.setConfigProperty("aether.transport.ipfs.refreshIpns", "false");
-            session.setConfigProperty("aether.transport.ipfs.publishIpns", "false");
+            session.setConfigProperty("aether.transport.ipfs.refreshNamespace", "false");
+            session.setConfigProperty("aether.transport.ipfs.publishNamespace", "false");
         }
         transporter = factory.newInstance(session, newRepo(url));
     }
@@ -134,7 +136,7 @@ public class IpfsTransporterTest {
     void testClassify(UseCase useCase) {
         setUp(useCase);
         assertEquals(Transporter.ERROR_OTHER, transporter.classify(new FileNotFoundException()));
-        assertEquals(Transporter.ERROR_NOT_FOUND, transporter.classify(new ResourceNotFoundException("testtest")));
+        assertEquals(Transporter.ERROR_NOT_FOUND, transporter.classify(new ResourceNotFoundException()));
     }
 
     @ParameterizedTest

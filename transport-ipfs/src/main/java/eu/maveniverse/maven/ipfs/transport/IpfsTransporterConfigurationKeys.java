@@ -42,50 +42,49 @@ public final class IpfsTransporterConfigurationKeys {
     public static final String DEFAULT_FILES_PREFIX = "publish";
 
     /**
-     * Whether to refresh IPNS record before deployment.
+     * Whether to refresh namespace IPNS record before deployment.
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link String}
-     * @configurationDefaultValue {@link #DEFAULT_REFRESH_IPNS}
+     * @configurationDefaultValue {@link #DEFAULT_REFRESH_NAMESPACE}
      * @configurationRepoIdSuffix Yes
      */
-    public static final String CONFIG_PROP_REFRESH_IPNS = CONFIG_PROPS_PREFIX + "refreshIpns";
+    public static final String CONFIG_PROP_REFRESH_NAMESPACE = CONFIG_PROPS_PREFIX + "refreshNamespace";
 
-    public static final boolean DEFAULT_REFRESH_IPNS = true;
+    public static final boolean DEFAULT_REFRESH_NAMESPACE = true;
 
     /**
-     * Whether to publish IPNS record for deployment. In Resolver 1.9.x this is tricky, as it has no notion of
-     * "session end", hence, this option is usable (will behave as expected) only if transport is used in deployment
-     * with "deploy at end" feature. Because of that, default is {@code false}.
+     * Whether to publish namespace IPNS record for deployment.
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link String}
-     * @configurationDefaultValue {@link #DEFAULT_PUBLISH_IPNS}
+     * @configurationDefaultValue {@link #DEFAULT_PUBLISH_NAMESPACE}
      * @configurationRepoIdSuffix Yes
      */
-    public static final String CONFIG_PROP_PUBLISH_IPNS = CONFIG_PROPS_PREFIX + "publishIpns";
+    public static final String CONFIG_PROP_PUBLISH_NAMESPACE = CONFIG_PROPS_PREFIX + "publishNamespace";
 
-    public static final boolean DEFAULT_PUBLISH_IPNS = false;
+    public static final boolean DEFAULT_PUBLISH_NAMESPACE = false;
 
     /**
-     * The name of the key to publish IPNS record. It has to exist in the current node, or can be created. The default
-     * value uses same value as namespace value is.
+     * The name of the key to publish namespace as IPNS record. It has to exist in the current node, or can be created.
+     * The default value uses same value as namespace value is.
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link String}
      * @configurationRepoIdSuffix Yes
      */
-    public static final String CONFIG_PROP_PUBLISH_IPNS_KEY_NAME = CONFIG_PROPS_PREFIX + "publishIpnsKeyName";
+    public static final String CONFIG_PROP_NAMESPACE_KEY = CONFIG_PROPS_PREFIX + "namespaceKey";
 
     /**
-     * Whether to create key if there is no key with given name. If {@code false} publishing will fail if no key found.
+     * Whether to create key if there is no namespace key with given name. If {@code false} publishing will fail if no
+     * key found.
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link Boolean}
-     * @configurationDefaultValue {@link #DEFAULT_PUBLISH_IPNS_KEY_CREATE}
+     * @configurationDefaultValue {@link #DEFAULT_NAMESPACE_KEY_CREATE}
      * @configurationRepoIdSuffix Yes
      */
-    public static final String CONFIG_PROP_PUBLISH_IPNS_KEY_CREATE = CONFIG_PROPS_PREFIX + "publishIpnsKeyCreate";
+    public static final String CONFIG_PROP_NAMESPACE_KEY_CREATE = CONFIG_PROPS_PREFIX + "namespaceKeyCreate";
 
-    public static final boolean DEFAULT_PUBLISH_IPNS_KEY_CREATE = true;
+    public static final boolean DEFAULT_NAMESPACE_KEY_CREATE = true;
 }

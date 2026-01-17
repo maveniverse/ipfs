@@ -5,10 +5,11 @@
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v20.html
  */
-package eu.maveniverse.maven.ipfs.transport;
+package eu.maveniverse.maven.ipfs.core.internal;
 
 import static java.util.Objects.requireNonNull;
 
+import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
 import io.ipfs.api.IPFS;
 import io.ipfs.api.KeyInfo;
 import io.ipfs.api.NamedStreamable;
@@ -19,34 +20,38 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Simple helper that exposes basic IPFS related methods.
- */
-@SuppressWarnings("rawtypes")
-public class IpfsNamespacePublisher {
+@Singleton
+@Named
+public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final IPFS ipfs;
     private final String nsRoot;
     private final String root;
     private final String namespace;
-    private final String publishIpnsKeyName;
-    private final boolean publishIpnsKeyCreate;
+    private final String namespaceKey;
+    private final boolean namespaceKeyCreate;
 
-    public IpfsNamespacePublisher(
+    private final AtomicBoolean pendingContent;
+
+    public IpfsNamespacePublisherImpl(
             IPFS ipfs,
             String namespace,
             String filesPrefix,
             String namespacePrefix,
-            String publishIpnsKeyName,
-            boolean publishIpnsKeyCreate) {
+            String namespaceKey,
+            boolean namespaceKeyCreate) {
         this.ipfs = requireNonNull(ipfs);
         this.namespace = requireNonNull(namespace);
-        this.publishIpnsKeyName = requireNonNull(publishIpnsKeyName);
-        this.publishIpnsKeyCreate = publishIpnsKeyCreate;
+        this.namespaceKey = requireNonNull(namespaceKey);
+        this.namespaceKeyCreate = namespaceKeyCreate;
+        this.pendingContent = new AtomicBoolean(false);
 
         this.nsRoot = URI.create("ipfs:///")
                 .resolve(filesPrefix + "/")
@@ -63,9 +68,20 @@ public class IpfsNamespacePublisher {
                         .getPath();
     }
 
+    @Override
+    public String namespace() {
+        return namespace;
+    }
+
+    @Override
+    public boolean pendingContent() {
+        return pendingContent.get();
+    }
+
+    @Override
     public boolean refreshNamespace() throws IOException {
         logger.info("Refreshing IPNS {} at {}...", namespace, nsRoot);
-        Optional<KeyInfo> keyInfo = getOrCreateKey(publishIpnsKeyName, publishIpnsKeyCreate);
+        Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
         if (keyInfo.isPresent()) {
             try {
                 Multihash namespaceCid = Multihash.decode(ipfs.name.resolve(keyInfo.orElseThrow().id));
@@ -78,64 +94,64 @@ public class IpfsNamespacePublisher {
                 logger.debug("Could not refresh IPNS {}", keyInfo.orElseThrow().id);
             }
         } else {
-            logger.info("Not refreshed: key '{}' not available and not allowed to create it", publishIpnsKeyName);
+            logger.info("Not refreshed: key '{}' not available and not allowed to create it", namespaceKey);
         }
         return false;
     }
 
+    @SuppressWarnings("rawtypes")
+    @Override
     public boolean publishNamespace() throws IOException {
         logger.info("Publishing IPNS {} at {}...", namespace, nsRoot);
-        Optional<Multihash> cido = getFilesPathCid(nsRoot);
-        if (cido.isPresent()) {
-            Multihash cid = cido.orElseThrow();
-            Optional<KeyInfo> keyInfo = getOrCreateKey(publishIpnsKeyName, publishIpnsKeyCreate);
+        Optional<Stat> stat = stat(nsRoot);
+        if (stat.isPresent()) {
+            Multihash cid = stat.orElseThrow().hash();
+            Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
             if (keyInfo.isPresent()) {
                 ipfs.pin.add(cid);
                 Map publish = ipfs.name.publish(cid, Optional.of(keyInfo.orElseThrow().name));
                 logger.info("Published IPNS {} (pointing to {})", publish.get("Name"), publish.get("Value"));
                 return true;
             } else {
-                logger.info("Not published: key '{}' not available nor allowed to create it", publishIpnsKeyName);
+                logger.info("Not published: key '{}' not available nor allowed to create it", namespaceKey);
             }
         }
         return false;
     }
 
-    public Map stat(String relPath) throws IOException {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override
+    public Optional<Stat> stat(String relPath) throws IOException {
         try {
-            return ipfs.files.stat(root + relPath);
+            Map stat = ipfs.files.stat(root + relPath);
+            return Optional.of(() -> stat);
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
             if (cause instanceof IOException && e.getMessage().contains("\"Message\":\"file does not exist\"")) {
-                throw new ResourceNotFoundException("Not found");
+                return Optional.empty();
             }
             throw e;
         }
     }
 
-    public long size(String relPath) throws IOException {
-        return Long.parseLong(String.valueOf(stat(relPath).get("Size")));
+    @Override
+    public Optional<InputStream> get(Multihash multihash) throws IOException {
+        try {
+            return Optional.of(ipfs.catStream(multihash));
+        } catch (RuntimeException e) {
+            // TODO: what happens here if non-existent CID?
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException && e.getMessage().contains("\"Message\":\"file does not exist\"")) {
+                return Optional.empty();
+            }
+            throw e;
+        }
     }
 
-    public Multihash peek(String relPath) throws IOException {
-        return Multihash.decode((String) stat(relPath).get("Hash"));
-    }
-
-    public InputStream get(String relPath) throws IOException {
-        return ipfs.catStream(peek(relPath));
-    }
-
+    @Override
     public void put(String relPath, InputStream inputStream) throws IOException {
         ipfs.files.write(root + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
-    }
-
-    private Optional<Multihash> getFilesPathCid(String path) {
-        try {
-            Map stat = ipfs.files.stat(path);
-            return Optional.of(Multihash.decode((String) stat.get("Hash")));
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        pendingContent.set(true);
     }
 
     private Optional<KeyInfo> getOrCreateKey(String keyName, boolean create) throws IOException {

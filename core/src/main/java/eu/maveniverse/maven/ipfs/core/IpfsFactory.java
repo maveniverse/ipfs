@@ -5,15 +5,17 @@
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v20.html
  */
-package eu.maveniverse.maven.ipfs.transport;
+package eu.maveniverse.maven.ipfs.core;
 
+import io.ipfs.api.IPFS;
 import java.io.IOException;
 
 /**
- * Special exception type used for "not found" errors.
+ * Factory for {@link IPFS} instances.
  */
-class ResourceNotFoundException extends IOException {
-    ResourceNotFoundException() {
-        super("IPFS MFS path not found");
-    }
+public interface IpfsFactory {
+    /**
+     * Creates {@link IPFS} instance and ensures is connected by calling {@link IPFS#id()}.
+     */
+    IPFS create(String multiaddr) throws IOException;
 }

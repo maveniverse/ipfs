@@ -7,6 +7,12 @@
  */
 package eu.maveniverse.maven.ipfs.extension3;
 
+import static java.util.Objects.requireNonNull;
+
+import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
+import java.io.IOException;
+import java.util.Collection;
+import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
@@ -23,8 +29,27 @@ import org.slf4j.LoggerFactory;
 public class IpfsLifecycleParticipant extends AbstractMavenLifecycleParticipant {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final IpfsNamespacePublisherRegistry registry;
+
+    @Inject
+    public IpfsLifecycleParticipant(IpfsNamespacePublisherRegistry registry) {
+        this.registry = requireNonNull(registry);
+    }
+
+    @Override
+    public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
+        super.afterProjectsRead(session);
+    }
+
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
-        super.afterSessionEnd(session);
+        try {
+            Collection<String> namespaces = registry.publishNamespaces();
+            if (!namespaces.isEmpty()) {
+                logger.info("Published namespaces: {}", namespaces);
+            }
+        } catch (IOException e) {
+            throw new MavenExecutionException("Failed Namespace publishing", e);
+        }
     }
 }

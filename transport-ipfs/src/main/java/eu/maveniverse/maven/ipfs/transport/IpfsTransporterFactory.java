@@ -9,12 +9,10 @@ package eu.maveniverse.maven.ipfs.transport;
 
 import static java.util.Objects.requireNonNull;
 
-import io.ipfs.api.IPFS;
+import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import javax.inject.Inject;
 import javax.inject.Named;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -22,8 +20,6 @@ import org.eclipse.aether.spi.connector.transport.Transporter;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transfer.NoTransporterException;
 import org.eclipse.aether.util.ConfigUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A transporter factory for repositories using the {@code ipfs:namespace[/namespacePrefix]} URIs.
@@ -39,9 +35,13 @@ public final class IpfsTransporterFactory implements TransporterFactory {
     private static final String PROTO = NAME + ":";
     private static final int PROTO_LEN = PROTO.length();
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private float priority;
-    private final ConcurrentMap<String, IpfsNamespacePublisher> ongoingPublishing = new ConcurrentHashMap<>();
+    private final IpfsNamespacePublisherRegistry registry;
+
+    @Inject
+    public IpfsTransporterFactory(IpfsNamespacePublisherRegistry registry) {
+        this.registry = requireNonNull(registry);
+    }
 
     @Override
     public float getPriority() {
@@ -105,57 +105,43 @@ public final class IpfsTransporterFactory implements TransporterFactory {
                     IpfsTransporterConfigurationKeys.DEFAULT_FILES_PREFIX,
                     IpfsTransporterConfigurationKeys.CONFIG_PROP_FILES_PREFIX + "." + repository.getId(),
                     IpfsTransporterConfigurationKeys.CONFIG_PROP_FILES_PREFIX);
-            boolean refreshIpns = ConfigUtils.getBoolean(
+            boolean refreshNamespace = ConfigUtils.getBoolean(
                     session.getConfigProperties(),
-                    IpfsTransporterConfigurationKeys.DEFAULT_REFRESH_IPNS,
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_REFRESH_IPNS + "." + repository.getId(),
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_REFRESH_IPNS);
-            boolean publishIpns = ConfigUtils.getBoolean(
+                    IpfsTransporterConfigurationKeys.DEFAULT_REFRESH_NAMESPACE,
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_REFRESH_NAMESPACE + "." + repository.getId(),
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_REFRESH_NAMESPACE);
+            boolean publishNamespace = ConfigUtils.getBoolean(
                     session.getConfigProperties(),
-                    IpfsTransporterConfigurationKeys.DEFAULT_PUBLISH_IPNS,
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS + "." + repository.getId(),
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS);
-            String publishIpnsKeyName = ConfigUtils.getString(
+                    IpfsTransporterConfigurationKeys.DEFAULT_PUBLISH_NAMESPACE,
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_NAMESPACE + "." + repository.getId(),
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_NAMESPACE);
+            String namespaceKey = ConfigUtils.getString(
                     session.getConfigProperties(),
                     namespace,
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS_KEY_NAME + "." + repository.getId(),
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS_KEY_NAME);
-            boolean publishIpnsKeyCreate = ConfigUtils.getBoolean(
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_NAMESPACE_KEY + "." + repository.getId(),
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_NAMESPACE_KEY);
+            boolean namespaceKeyCreate = ConfigUtils.getBoolean(
                     session.getConfigProperties(),
-                    IpfsTransporterConfigurationKeys.DEFAULT_PUBLISH_IPNS_KEY_CREATE,
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS_KEY_CREATE + "." + repository.getId(),
-                    IpfsTransporterConfigurationKeys.CONFIG_PROP_PUBLISH_IPNS_KEY_CREATE);
+                    IpfsTransporterConfigurationKeys.DEFAULT_NAMESPACE_KEY_CREATE,
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_NAMESPACE_KEY_CREATE + "." + repository.getId(),
+                    IpfsTransporterConfigurationKeys.CONFIG_PROP_NAMESPACE_KEY_CREATE);
 
-            IPFS ipfs = connect(multiaddr);
-            IpfsNamespacePublisher publisher = ongoingPublishing.computeIfAbsent(repository.getId(), k -> {
-                IpfsNamespacePublisher pub = new IpfsNamespacePublisher(
-                        ipfs, namespace, filesPrefix, namespacePrefix, publishIpnsKeyName, publishIpnsKeyCreate);
-                if (refreshIpns) {
-                    try {
-                        if (!pub.refreshNamespace()) {
-                            logger.warn("IPNS refresh unsuccessful, see logs above for reasons");
-                        }
-                    } catch (IOException e) {
-                        logger.warn("IPNS refresh failed", e);
-                    }
-                }
-                return pub;
-            });
-            return new IpfsTransporter(publisher, publishIpns);
+            try {
+                return new IpfsTransporter(
+                        registry.ipfsNamespacePublisher(
+                                multiaddr,
+                                namespace,
+                                filesPrefix,
+                                namespacePrefix,
+                                namespaceKey,
+                                namespaceKeyCreate,
+                                refreshNamespace,
+                                publishNamespace),
+                        false);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e); // hard failure, like bad multiaddr or node not running
+            }
         }
         throw new NoTransporterException(repository);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private IPFS connect(String multiaddr) {
-        try {
-            IPFS ipfs = new IPFS(multiaddr);
-            Map id = ipfs.id();
-            logger.debug("Connected to IPFS w/ ID={} node at '{}'", id.get("ID"), multiaddr);
-            return ipfs;
-        } catch (IOException e) {
-            // this is user error: bad multiaddr or daemon does not run; hard failure
-            throw new UncheckedIOException(e);
-        }
     }
 }
