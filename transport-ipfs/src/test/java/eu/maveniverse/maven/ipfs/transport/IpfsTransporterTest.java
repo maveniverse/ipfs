@@ -47,10 +47,7 @@ import org.testcontainers.utility.DockerImageName;
 public class IpfsTransporterTest {
     public static final DockerImageName IPFS_KUBO_IMAGE = DockerImageName.parse("ipfs/kubo:release");
 
-    public static GenericContainer<?> kubo = new GenericContainer<>(IPFS_KUBO_IMAGE)
-            .withReuse(false)
-            .withAccessToHost(false)
-            .withExposedPorts(5001);
+    public static GenericContainer<?> kubo = new GenericContainer<>(IPFS_KUBO_IMAGE).withExposedPorts(5001);
     public static int kuboPort;
 
     @BeforeAll
