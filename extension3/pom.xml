@@ -24,6 +24,10 @@
   <dependencies>
     <dependency>
       <groupId>eu.maveniverse.maven.ipfs</groupId>
+      <artifactId>core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>eu.maveniverse.maven.ipfs</groupId>
       <artifactId>transport-ipfs</artifactId>
     </dependency>
 
