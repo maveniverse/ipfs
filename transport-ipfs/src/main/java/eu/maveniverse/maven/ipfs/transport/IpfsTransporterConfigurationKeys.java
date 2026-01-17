@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v20.html
  */
-package eu.maveniverse.maven.ipfs.extension3;
+package eu.maveniverse.maven.ipfs.transport;
 
 import org.eclipse.aether.RepositorySystemSession;
 
@@ -15,7 +15,7 @@ import org.eclipse.aether.RepositorySystemSession;
 public final class IpfsTransporterConfigurationKeys {
     private IpfsTransporterConfigurationKeys() {}
 
-    static final String CONFIG_PROPS_PREFIX = "aether.transport." + IpfsTransporterFactory.NAME + ".";
+    private static final String CONFIG_PROPS_PREFIX = "aether.transport." + IpfsTransporterFactory.NAME + ".";
 
     /**
      * Multiaddress of node to connect to, by default expects local node.

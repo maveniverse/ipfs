@@ -5,7 +5,15 @@
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v20.html
  */
+package eu.maveniverse.maven.ipfs.transport;
+
+import java.io.IOException;
+
 /**
- * IPFS extension for Maven.
+ * Special exception type used for "not found" errors.
  */
-package eu.maveniverse.maven.ipfs.extension3;
+class ResourceNotFoundException extends IOException {
+    ResourceNotFoundException(String message) {
+        super(message);
+    }
+}

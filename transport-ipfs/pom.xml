@@ -17,14 +17,14 @@
     <version>0.1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>extension3</artifactId>
+  <artifactId>transport-ipfs</artifactId>
 
   <name>${project.groupId}:${project.artifactId}</name>
 
   <dependencies>
     <dependency>
-      <groupId>eu.maveniverse.maven.ipfs</groupId>
-      <artifactId>transport-ipfs</artifactId>
+      <groupId>com.github.ipfs</groupId>
+      <artifactId>java-ipfs-http-client</artifactId>
     </dependency>
 
     <dependency>
@@ -38,8 +38,18 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-spi</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-util</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -51,6 +61,11 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-test-util</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
