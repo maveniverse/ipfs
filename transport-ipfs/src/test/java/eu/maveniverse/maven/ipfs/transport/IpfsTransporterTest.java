@@ -99,8 +99,8 @@ public class IpfsTransporterTest {
         }
         if (session == null) {
             session = TestUtils.newSession();
-            session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
-            // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
+            // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
+            session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
             session.setConfigProperty("aether.transport.ipfs.filesPrefix", "tmp");
             session.setConfigProperty("aether.transport.ipfs.refreshNamespace", "false");
             session.setConfigProperty("aether.transport.ipfs.publishNamespace", "false");

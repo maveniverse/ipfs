@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Lifecycle participant.
+ * Lifecycle participant for IPFS.
  */
 @Singleton
 @Named
@@ -34,11 +34,6 @@ public class IpfsLifecycleParticipant extends AbstractMavenLifecycleParticipant 
     @Inject
     public IpfsLifecycleParticipant(IpfsNamespacePublisherRegistry registry) {
         this.registry = requireNonNull(registry);
-    }
-
-    @Override
-    public void afterProjectsRead(MavenSession session) throws MavenExecutionException {
-        super.afterProjectsRead(session);
     }
 
     @Override
