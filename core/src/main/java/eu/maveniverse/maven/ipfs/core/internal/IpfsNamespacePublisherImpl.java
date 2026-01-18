@@ -88,7 +88,8 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
                 ipfs.files.rm(nsRoot, true, true);
                 ipfs.files.cp("/ipfs/" + namespaceCid.toBase58(), nsRoot, true);
                 ipfs.pin.add(namespaceCid);
-                logger.info("Refreshed IPNS {} at {}...", namespace, nsRoot);
+                ipfs.pin.verify(false, false);
+                logger.info("Refreshed IPNS {} at {} to {}...", namespace, nsRoot, namespaceCid);
                 return true;
             } catch (Exception e) {
                 // not yet published?; ignore
