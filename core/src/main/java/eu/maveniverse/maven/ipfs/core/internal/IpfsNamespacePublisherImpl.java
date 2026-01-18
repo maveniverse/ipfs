@@ -53,7 +53,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         this.ipfs = requireNonNull(ipfs);
         this.nsRoot = URI.create("ipfs:///")
                 .resolve(requireNonNull(filesPrefix) + "/")
-                .resolve(requireNonNull(namespace) + "/")
+                .resolve(requireNonNull(namespace))
                 .normalize()
                 .getPath();
         this.root = namespacePrefix.isBlank()
@@ -61,7 +61,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
                 : URI.create("ipfs:///")
                         .resolve(requireNonNull(filesPrefix) + "/")
                         .resolve(requireNonNull(namespace) + "/")
-                        .resolve(requireNonNull(namespacePrefix) + "/")
+                        .resolve(requireNonNull(namespacePrefix))
                         .normalize()
                         .getPath();
         this.namespace = requireNonNull(namespace);
@@ -84,7 +84,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     @Override
     public Optional<Stat> stat(String relPath) throws IOException {
         try {
-            Map stat = ipfs.files.stat(root + relPath);
+            Map stat = ipfs.files.stat(root + "/" + relPath);
             return Optional.of(() -> stat);
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
@@ -111,7 +111,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
 
     @Override
     public void put(String relPath, InputStream inputStream) throws IOException {
-        ipfs.files.write(root + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
+        ipfs.files.write(root + "/" + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
         pendingContent.set(true);
     }
 
