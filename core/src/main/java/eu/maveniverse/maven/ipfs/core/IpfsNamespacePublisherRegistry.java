@@ -8,16 +8,17 @@
 package eu.maveniverse.maven.ipfs.core;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * Namespace publisher registry, that exposes IPFS related methods.
+ * Namespace publisher registry.
  */
 public interface IpfsNamespacePublisherRegistry {
     /**
      * Acquires instance of {@link IpfsNamespacePublisher}, never {@code null}.
      */
-    IpfsNamespacePublisher ipfsNamespacePublisher(
+    IpfsNamespacePublisher acquire(
+            ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers,
             String multiaddr,
             String namespace,
             String filesPrefix,
@@ -29,7 +30,7 @@ public interface IpfsNamespacePublisherRegistry {
             throws IOException;
 
     /**
-     * Publishes namespaces that has pending content waiting to be published, never {@code null}.
+     * Cleans up all namespaces.
      */
-    Collection<String> publishNamespaces() throws IOException;
+    void closeAll(ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers) throws IOException;
 }

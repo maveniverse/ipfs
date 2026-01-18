@@ -9,9 +9,12 @@ package eu.maveniverse.maven.ipfs.transport;
 
 import static java.util.Objects.requireNonNull;
 
+import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.eclipse.aether.RepositorySystemSession;
@@ -65,6 +68,7 @@ public final class IpfsTransporterFactory implements TransporterFactory {
      * @param session The session.
      * @param repository The remote repository.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Transporter newInstance(RepositorySystemSession session, RemoteRepository repository)
             throws NoTransporterException {
@@ -127,17 +131,18 @@ public final class IpfsTransporterFactory implements TransporterFactory {
                     IpfsTransporterConfigurationKeys.CONFIG_PROP_NAMESPACE_KEY_CREATE);
 
             try {
-                return new IpfsTransporter(
-                        registry.ipfsNamespacePublisher(
-                                multiaddr,
-                                namespace,
-                                filesPrefix,
-                                namespacePrefix,
-                                namespaceKey,
-                                namespaceKeyCreate,
-                                refreshNamespace,
-                                publishNamespace),
-                        false);
+                return new IpfsTransporter(registry.acquire(
+                        (ConcurrentMap<String, IpfsNamespacePublisher>) session.getData()
+                                .computeIfAbsent(
+                                        IpfsNamespacePublisherRegistry.class.getName(), ConcurrentHashMap::new),
+                        multiaddr,
+                        namespace,
+                        filesPrefix,
+                        namespacePrefix,
+                        namespaceKey,
+                        namespaceKeyCreate,
+                        refreshNamespace,
+                        publishNamespace));
             } catch (IOException e) {
                 throw new UncheckedIOException(e); // hard failure, like bad multiaddr or node not running
             }

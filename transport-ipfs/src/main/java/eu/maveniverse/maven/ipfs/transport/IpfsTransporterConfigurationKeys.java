@@ -42,7 +42,7 @@ public final class IpfsTransporterConfigurationKeys {
     public static final String DEFAULT_FILES_PREFIX = "publish";
 
     /**
-     * Whether to refresh namespace IPNS record before deployment.
+     * Whether to refresh namespace IPNS record.
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link String}
@@ -54,7 +54,7 @@ public final class IpfsTransporterConfigurationKeys {
     public static final boolean DEFAULT_REFRESH_NAMESPACE = true;
 
     /**
-     * Whether to publish namespace IPNS record for deployment.
+     * Whether to publish namespace IPNS record (if it has pending content).
      *
      * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
      * @configurationType {@link String}
@@ -63,7 +63,7 @@ public final class IpfsTransporterConfigurationKeys {
      */
     public static final String CONFIG_PROP_PUBLISH_NAMESPACE = CONFIG_PROPS_PREFIX + "publishNamespace";
 
-    public static final boolean DEFAULT_PUBLISH_NAMESPACE = false;
+    public static final boolean DEFAULT_PUBLISH_NAMESPACE = true;
 
     /**
      * The name of the key to publish namespace as IPNS record. It has to exist in the current node, or can be created.
