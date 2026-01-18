@@ -41,7 +41,8 @@ final class IpfsTransporter extends AbstractTransporter {
 
     @Override
     protected void implPeek(PeekTask task) throws Exception {
-        if (publisher.stat(task.getLocation().getPath()).isEmpty()) {
+        Optional<IpfsNamespacePublisher.Stat> stat = publisher.stat(task.getLocation().getPath());
+        if (stat.isEmpty() || !stat.orElseThrow().file()) {
             throw new ResourceNotFoundException();
         }
     }
