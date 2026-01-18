@@ -14,10 +14,10 @@
   <parent>
     <groupId>eu.maveniverse.maven.ipfs</groupId>
     <artifactId>ipfs</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.2.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>transport-ipfs</artifactId>
+  <artifactId>transport</artifactId>
 
   <name>${project.groupId}:${project.artifactId}</name>
 

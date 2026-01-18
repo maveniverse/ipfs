@@ -19,7 +19,7 @@
 
   <groupId>eu.maveniverse.maven.ipfs</groupId>
   <artifactId>ipfs</artifactId>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.2.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
@@ -36,7 +36,7 @@
 
   <modules>
     <module>core</module>
-    <module>transport-ipfs</module>
+    <module>transport</module>
     <module>extension3</module>
   </modules>
 
@@ -58,7 +58,7 @@
   </ciManagement>
 
   <properties>
-    <project.build.outputTimestamp>2026-01-18T17:46:04Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-01-18T18:07:41Z</project.build.outputTimestamp>
 
     <!--
     Build time: Maven 3.9 and Java 21+
@@ -83,7 +83,7 @@
       </dependency>
       <dependency>
         <groupId>eu.maveniverse.maven.ipfs</groupId>
-        <artifactId>transport-ipfs</artifactId>
+        <artifactId>transport</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
