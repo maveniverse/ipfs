@@ -36,7 +36,7 @@
 
   <modules>
     <module>core</module>
-    <module>transport-ipfs</module>
+    <module>transport</module>
     <module>extension3</module>
   </modules>
 
@@ -83,7 +83,7 @@
       </dependency>
       <dependency>
         <groupId>eu.maveniverse.maven.ipfs</groupId>
-        <artifactId>transport-ipfs</artifactId>
+        <artifactId>transport</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

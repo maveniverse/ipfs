@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+  <exportedPackages>
+    <exportedPackage>eu.maveniverse.maven.ipfs.core</exportedPackage>
+    <exportedPackage>eu.maveniverse.maven.ipfs.transport</exportedPackage>
+  </exportedPackages>
+  <exportedArtifacts>
+    <exportedArtifact>eu.maveniverse.maven.ipfs:core</exportedArtifact>
+    <exportedArtifact>eu.maveniverse.maven.ipfs:transport</exportedArtifact>
+  </exportedArtifacts>
+</extension>

@@ -17,7 +17,7 @@
     <version>0.1.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>transport-ipfs</artifactId>
+  <artifactId>transport</artifactId>
 
   <name>${project.groupId}:${project.artifactId}</name>
 
