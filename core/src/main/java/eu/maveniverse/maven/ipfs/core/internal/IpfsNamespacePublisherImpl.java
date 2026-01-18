@@ -81,17 +81,18 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     @Override
     public boolean refreshNamespace() throws IOException {
         logger.info("Refreshing IPNS {} at {}...", namespace, nsRoot);
-        Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
-        if (keyInfo.isPresent()) {
+        Optional<Multihash> res = resolveName(namespace);
+        if (res.isPresent()) {
+            Multihash namespaceCid = res.orElseThrow();
             try {
-                Multihash namespaceCid = Multihash.decode(ipfs.name.resolve(keyInfo.orElseThrow().id));
+                ipfs.files.rm(nsRoot, true, true);
                 ipfs.files.cp("/ipfs/" + namespaceCid.toBase58(), nsRoot, true);
                 ipfs.pin.add(namespaceCid);
                 logger.info("Refreshed IPNS {} at {}...", namespace, nsRoot);
                 return true;
             } catch (Exception e) {
                 // not yet published?; ignore
-                logger.debug("Could not refresh IPNS {}", keyInfo.orElseThrow().id);
+                logger.debug("Could not refresh IPNS {}", namespaceCid);
             }
         } else {
             logger.info("Not refreshed: key '{}' not available and not allowed to create it", namespaceKey);
@@ -152,6 +153,16 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     public void put(String relPath, InputStream inputStream) throws IOException {
         ipfs.files.write(root + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
         pendingContent.set(true);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Optional<Multihash> resolveName(String name) throws IOException {
+        try {
+            Map res = ipfs.dag.resolve("/ipns/" + name);
+            return Optional.of(Multihash.decode((String) ((Map) res.get("Cid")).get("/")));
+        } catch (RuntimeException e) {
+            return Optional.empty();
+        }
     }
 
     private Optional<KeyInfo> getOrCreateKey(String keyName, boolean create) throws IOException {
