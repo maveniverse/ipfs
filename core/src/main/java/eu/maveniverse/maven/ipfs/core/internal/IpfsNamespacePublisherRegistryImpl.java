@@ -13,9 +13,9 @@ import eu.maveniverse.maven.ipfs.core.IpfsFactory;
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -28,16 +28,15 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final IpfsFactory ipfsFactory;
-    private final ConcurrentLinkedDeque<IpfsNamespacePublisher> publishersToPublish;
 
     @Inject
     public IpfsNamespacePublisherRegistryImpl(IpfsFactory ipfsFactory) {
         this.ipfsFactory = requireNonNull(ipfsFactory);
-        this.publishersToPublish = new ConcurrentLinkedDeque<>();
     }
 
     @Override
-    public IpfsNamespacePublisher ipfsNamespacePublisher(
+    public IpfsNamespacePublisher acquire(
+            ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers,
             String multiaddr,
             String namespace,
             String filesPrefix,
@@ -47,35 +46,35 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
             boolean refreshNamespace,
             boolean publishNamespace)
             throws IOException {
-        IpfsNamespacePublisher publisher = new IpfsNamespacePublisherImpl(
-                ipfsFactory.create(multiaddr),
-                namespace,
-                filesPrefix,
-                namespacePrefix,
-                namespaceKey,
-                namespaceKeyCreate);
-        if (refreshNamespace) {
-            publisher.refreshNamespace();
+        try {
+            return sessionPublishers.computeIfAbsent(namespaceKey, k -> {
+                try {
+                    return new IpfsNamespacePublisherImpl(
+                            ipfsFactory.create(multiaddr),
+                            namespace,
+                            filesPrefix,
+                            namespacePrefix,
+                            namespaceKey,
+                            namespaceKeyCreate,
+                            refreshNamespace,
+                            publishNamespace);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
-        if (publishNamespace) {
-            publishersToPublish.push(publisher);
-        }
-        return publisher;
     }
 
     @Override
-    public Collection<String> publishNamespaces() throws IOException {
-        ArrayList<String> publishedNamespaces = new ArrayList<>();
+    public void closeAll(ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers) throws IOException {
         ArrayList<IOException> ioExceptions = new ArrayList<>();
-        while (!publishersToPublish.isEmpty()) {
-            IpfsNamespacePublisher publisher = publishersToPublish.pop();
-            if (publisher.pendingContent()) {
-                try {
-                    publisher.publishNamespace();
-                } catch (IOException e) {
-                    ioExceptions.add(e);
-                }
-                publishedNamespaces.add(publisher.namespace());
+        for (IpfsNamespacePublisher publisher : sessionPublishers.values()) {
+            try {
+                publisher.close();
+            } catch (IOException e) {
+                ioExceptions.add(e);
             }
         }
         if (!ioExceptions.isEmpty()) {
@@ -83,6 +82,5 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
             ioExceptions.forEach(ex::addSuppressed);
             throw ex;
         }
-        return publishedNamespaces;
     }
 }

@@ -10,7 +10,6 @@ package eu.maveniverse.maven.ipfs.transport;
 import static java.util.Objects.requireNonNull;
 
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Optional;
@@ -27,11 +26,9 @@ import org.slf4j.LoggerFactory;
 final class IpfsTransporter extends AbstractTransporter {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IpfsNamespacePublisher publisher;
-    private final boolean publishNamespace;
 
-    IpfsTransporter(IpfsNamespacePublisher publisher, boolean publishNamespace) {
+    IpfsTransporter(IpfsNamespacePublisher publisher) {
         this.publisher = requireNonNull(publisher);
-        this.publishNamespace = publishNamespace;
     }
 
     @Override
@@ -75,15 +72,5 @@ final class IpfsTransporter extends AbstractTransporter {
     }
 
     @Override
-    protected void implClose() {
-        if (publishNamespace) {
-            try {
-                if (!publisher.publishNamespace()) {
-                    logger.warn("IPNS publish unsuccessful, see logs above for reasons");
-                }
-            } catch (IOException e) {
-                logger.warn("IPNS publishing failed", e);
-            }
-        }
-    }
+    protected void implClose() {}
 }

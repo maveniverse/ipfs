@@ -8,6 +8,7 @@
 package eu.maveniverse.maven.ipfs.core;
 
 import io.ipfs.multihash.Multihash;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -16,26 +17,11 @@ import java.util.Optional;
 /**
  * Namespace publisher, that exposes IPFS related methods.
  */
-public interface IpfsNamespacePublisher {
+public interface IpfsNamespacePublisher extends Closeable {
     /**
      * The namespace this publisher publishes, never {@code null}.
      */
     String namespace();
-
-    /**
-     * Returns {@code true} if this publisher has pending content that needs to be published.
-     */
-    boolean pendingContent();
-
-    /**
-     * Refreshes the namespace, by resolving configured IPNS key and copying into IPFS MFS.
-     */
-    boolean refreshNamespace() throws IOException;
-
-    /**
-     * Publishes the namespace to configured IPNS key.
-     */
-    boolean publishNamespace() throws IOException;
 
     /**
      * Stat response.
