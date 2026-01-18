@@ -37,14 +37,14 @@ public interface IpfsNamespacePublisher extends Closeable {
         /**
          * Returns the size of node (makes sense for files).
          */
-        default Long size() {
+        default long size() {
             return Long.parseLong(String.valueOf(stat().getOrDefault("Size", "0")));
         }
 
         /**
          * Returns the cumulative size of node.
          */
-        default Long cumulativeSize() {
+        default long cumulativeSize() {
             return Long.parseLong(String.valueOf(stat().getOrDefault("CumulativeSize", "0")));
         }
 
