@@ -85,6 +85,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         if (keyInfo.isPresent()) {
             try {
                 Multihash namespaceCid = Multihash.decode(ipfs.name.resolve(keyInfo.orElseThrow().id));
+                ipfs.files.rm(nsRoot, true, true);
                 ipfs.files.cp("/ipfs/" + namespaceCid.toBase58(), nsRoot, true);
                 ipfs.pin.add(namespaceCid);
                 logger.info("Refreshed IPNS {} at {}...", namespace, nsRoot);
