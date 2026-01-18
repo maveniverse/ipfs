@@ -17,14 +17,11 @@ import org.eclipse.aether.spi.connector.transport.AbstractTransporter;
 import org.eclipse.aether.spi.connector.transport.GetTask;
 import org.eclipse.aether.spi.connector.transport.PeekTask;
 import org.eclipse.aether.spi.connector.transport.PutTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A transporter using {@link IpfsNamespacePublisher} to implement transport features.
  */
 final class IpfsTransporter extends AbstractTransporter {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final IpfsNamespacePublisher publisher;
 
     IpfsTransporter(IpfsNamespacePublisher publisher) {
@@ -41,7 +38,8 @@ final class IpfsTransporter extends AbstractTransporter {
 
     @Override
     protected void implPeek(PeekTask task) throws Exception {
-        Optional<IpfsNamespacePublisher.Stat> stat = publisher.stat(task.getLocation().getPath());
+        Optional<IpfsNamespacePublisher.Stat> stat =
+                publisher.stat(task.getLocation().getPath());
         if (stat.isEmpty() || !stat.orElseThrow().file()) {
             throw new ResourceNotFoundException();
         }

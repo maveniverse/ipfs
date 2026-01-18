@@ -20,8 +20,6 @@ import javax.inject.Singleton;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
 import org.apache.maven.MavenExecutionException;
 import org.apache.maven.execution.MavenSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Lifecycle participant for IPFS.
@@ -29,8 +27,6 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @Named
 public class IpfsLifecycleParticipant extends AbstractMavenLifecycleParticipant {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
     private final IpfsNamespacePublisherRegistry registry;
 
     @Inject

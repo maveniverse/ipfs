@@ -39,6 +39,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     private final boolean namespaceKeyCreate;
     private final boolean publishNamespace;
     private final AtomicBoolean pendingContent;
+    private final AtomicBoolean closed;
 
     public IpfsNamespacePublisherImpl(
             IPFS ipfs,
@@ -69,6 +70,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         this.namespaceKeyCreate = namespaceKeyCreate;
         this.publishNamespace = publishNamespace;
         this.pendingContent = new AtomicBoolean(false);
+        this.closed = new AtomicBoolean(false);
 
         if (refreshNamespace) {
             refreshNamespace();
@@ -83,6 +85,8 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public Optional<Stat> stat(String relPath) throws IOException {
+        checkClosed();
+        requireNonNull(relPath);
         try {
             Map stat = ipfs.files.stat(root + "/" + relPath);
             return Optional.of(() -> stat);
@@ -97,6 +101,8 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
 
     @Override
     public Optional<InputStream> get(Multihash multihash) throws IOException {
+        checkClosed();
+        requireNonNull(multihash);
         try {
             return Optional.of(ipfs.catStream(multihash));
         } catch (RuntimeException e) {
@@ -111,14 +117,25 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
 
     @Override
     public void put(String relPath, InputStream inputStream) throws IOException {
+        checkClosed();
+        requireNonNull(relPath);
+        requireNonNull(inputStream);
         ipfs.files.write(root + "/" + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
         pendingContent.set(true);
     }
 
     @Override
     public void close() throws IOException {
-        if (publishNamespace && pendingContent.get()) {
-            publishNamespace();
+        if (closed.compareAndSet(false, true)) {
+            if (publishNamespace && pendingContent.get()) {
+                publishNamespace();
+            }
+        }
+    }
+
+    private void checkClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("Already closed");
         }
     }
 

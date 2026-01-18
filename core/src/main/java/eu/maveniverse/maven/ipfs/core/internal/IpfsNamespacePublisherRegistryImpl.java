@@ -19,14 +19,10 @@ import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 @Named
 public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublisherRegistry {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
     private final IpfsFactory ipfsFactory;
 
     @Inject
