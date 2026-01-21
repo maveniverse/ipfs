@@ -19,7 +19,7 @@
 
   <groupId>eu.maveniverse.maven.ipfs</groupId>
   <artifactId>ipfs</artifactId>
-  <version>0.2.3</version>
+  <version>0.2.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
@@ -43,7 +43,7 @@
   <scm>
     <connection>scm:git:git@github.com:maveniverse/ipfs.git</connection>
     <developerConnection>scm:git:git@github.com:maveniverse/ipfs.git</developerConnection>
-    <tag>release-0.2.3</tag>
+    <tag>HEAD</tag>
     <url>https://github.com/maveniverse/ipfs</url>
   </scm>
 
@@ -58,7 +58,7 @@
   </ciManagement>
 
   <properties>
-    <project.build.outputTimestamp>2026-01-21T20:38:13Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-01-21T20:38:16Z</project.build.outputTimestamp>
 
     <!--
     Build time: Maven 3.9 and Java 21+
