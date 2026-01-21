@@ -82,21 +82,11 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         return namespace;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public Optional<Stat> stat(String relPath) throws IOException {
         checkClosed();
         requireNonNull(relPath);
-        try {
-            Map stat = ipfs.files.stat(root + "/" + relPath);
-            return Optional.of(() -> stat);
-        } catch (RuntimeException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof IOException && e.getMessage().contains("\"Message\":\"file does not exist\"")) {
-                return Optional.empty();
-            }
-            throw e;
-        }
+        return doStat(relPath);
     }
 
     @Override
@@ -136,6 +126,20 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     private void checkClosed() {
         if (closed.get()) {
             throw new IllegalStateException("Already closed");
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Optional<Stat> doStat(String relPath) throws IOException {
+        try {
+            Map stat = ipfs.files.stat(root + "/" + relPath);
+            return Optional.of(() -> stat);
+        } catch (RuntimeException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IOException && e.getMessage().contains("\"Message\":\"file does not exist\"")) {
+                return Optional.empty();
+            }
+            throw e;
         }
     }
 
@@ -182,7 +186,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     @SuppressWarnings("rawtypes")
     private void publishNamespace() throws IOException {
         logger.info("Publishing IPNS {} at {}...", namespace, nsRoot);
-        Optional<Stat> stat = stat(nsRoot);
+        Optional<Stat> stat = doStat(nsRoot);
         if (stat.isPresent()) {
             Multihash cid = stat.orElseThrow().hash();
             Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
