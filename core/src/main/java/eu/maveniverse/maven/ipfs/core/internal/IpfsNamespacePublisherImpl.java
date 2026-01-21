@@ -86,7 +86,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     public Optional<Stat> stat(String relPath) throws IOException {
         checkClosed();
         requireNonNull(relPath);
-        return doStat(root + "/" + relPath);
+        return doStatAbs(root + "/" + relPath);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Optional<Stat> doStat(String absPath) throws IOException {
+    private Optional<Stat> doStatAbs(String absPath) throws IOException {
         try {
             Map stat = ipfs.files.stat(absPath);
             return Optional.of(() -> stat);
@@ -186,7 +186,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     @SuppressWarnings("rawtypes")
     private void publishNamespace() throws IOException {
         logger.info("Publishing IPNS {} at {}...", namespace, nsRoot);
-        Optional<Stat> stat = doStat(nsRoot);
+        Optional<Stat> stat = doStatAbs(nsRoot);
         if (stat.isPresent()) {
             Multihash cid = stat.orElseThrow().hash();
             Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
