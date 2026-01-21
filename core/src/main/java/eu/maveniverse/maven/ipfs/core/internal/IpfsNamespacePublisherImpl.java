@@ -86,7 +86,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     public Optional<Stat> stat(String relPath) throws IOException {
         checkClosed();
         requireNonNull(relPath);
-        return doStat(relPath);
+        return doStat(root + "/" + relPath);
     }
 
     @Override
@@ -130,9 +130,9 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Optional<Stat> doStat(String relPath) throws IOException {
+    private Optional<Stat> doStat(String absPath) throws IOException {
         try {
-            Map stat = ipfs.files.stat(root + "/" + relPath);
+            Map stat = ipfs.files.stat(absPath);
             return Optional.of(() -> stat);
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
