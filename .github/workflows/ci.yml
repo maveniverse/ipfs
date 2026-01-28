@@ -9,7 +9,9 @@ on:
 jobs:
   build:
     name: Verify
-    uses: maveniverse/parent/.github/workflows/ci.yml@release-49
+    uses: maveniverse/parent/.github/workflows/ci.yml@3a4d3fac5e492d7e290b5d11944d1249282ac038
     with:
       maven-test-run: false
+      needs-ipfs: true
+      needs-ipfs-daemon: true
 
