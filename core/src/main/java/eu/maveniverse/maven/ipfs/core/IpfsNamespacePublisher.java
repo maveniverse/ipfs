@@ -7,6 +7,7 @@
  */
 package eu.maveniverse.maven.ipfs.core;
 
+import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,8 +31,8 @@ public interface IpfsNamespacePublisher extends Closeable {
         /**
          * Returns the CID of node.
          */
-        default Multihash hash() {
-            return Multihash.decode((String) stat().get("Hash"));
+        default Cid hash() {
+            return Cid.decode((String) stat().get("Hash"));
         }
 
         /**

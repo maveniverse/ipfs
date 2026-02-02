@@ -10,13 +10,17 @@ package eu.maveniverse.maven.ipfs.core.internal;
 import static java.util.Objects.requireNonNull;
 
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
+import io.ipfs.api.AddArgs;
 import io.ipfs.api.IPFS;
 import io.ipfs.api.KeyInfo;
+import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
+import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,6 +44,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
     private final boolean publishNamespace;
     private final AtomicBoolean pendingContent;
     private final AtomicBoolean closed;
+    private final Runnable onClose;
 
     public IpfsNamespacePublisherImpl(
             IPFS ipfs,
@@ -49,7 +54,8 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
             String namespaceKey,
             boolean namespaceKeyCreate,
             boolean refreshNamespace,
-            boolean publishNamespace)
+            boolean publishNamespace,
+            Runnable onClose)
             throws IOException {
         this.ipfs = requireNonNull(ipfs);
         this.nsRoot = URI.create("ipfs:///")
@@ -71,6 +77,7 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         this.publishNamespace = publishNamespace;
         this.pendingContent = new AtomicBoolean(false);
         this.closed = new AtomicBoolean(false);
+        this.onClose = onClose;
 
         if (refreshNamespace) {
             refreshNamespace();
@@ -110,7 +117,16 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         checkClosed();
         requireNonNull(relPath);
         requireNonNull(inputStream);
-        ipfs.files.write(root + "/" + relPath, new NamedStreamable.InputStreamWrapper(inputStream), true, true);
+        List<MerkleNode> mnl = ipfs.add(
+                new NamedStreamable.InputStreamWrapper(inputStream),
+                AddArgs.Builder.newInstance()
+                        .setCidVersion(1)
+                        .setRawLeaves()
+                        .setPin()
+                        .build());
+        String path = root + "/" + relPath;
+        ipfs.files.rm(path, true, true);
+        ipfs.files.cp("/ipfs/" + mnl.get(0).hash, path, true);
         pendingContent.set(true);
     }
 
@@ -119,6 +135,9 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         if (closed.compareAndSet(false, true)) {
             if (publishNamespace && pendingContent.get()) {
                 publishNamespace();
+            }
+            if (onClose != null) {
+                onClose.run();
             }
         }
     }
@@ -143,43 +162,47 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private Optional<Multihash> resolveName(String name) throws IOException {
+    private Optional<Cid> resolveName(String name) throws IOException {
         try {
-            Map res = ipfs.dag.resolve("/ipns/" + name);
-            return Optional.of(Multihash.decode((String) ((Map) res.get("Cid")).get("/")));
+            String path = ipfs.name.resolve(name);
+            if (path.startsWith("/ipfs/")) {
+                path = path.substring(6);
+            }
+            return Optional.of(Cid.decode(path));
         } catch (RuntimeException e) {
-            return Optional.empty();
+            // swallow; will return empty at end
         }
+        return Optional.empty();
     }
 
-    private Optional<KeyInfo> getOrCreateKey(String keyName, boolean create) throws IOException {
+    private Optional<KeyInfo> getOrCreateKey() throws IOException {
         Optional<KeyInfo> keyInfoOptional = ipfs.key.list().stream()
-                .filter(k -> Objects.equals(keyName, k.name))
+                .filter(k -> Objects.equals(namespaceKey, k.name))
                 .findAny();
-        if (create && keyInfoOptional.isEmpty()) {
-            keyInfoOptional = Optional.of(ipfs.key.gen(keyName, Optional.empty(), Optional.empty()));
+        if (namespaceKeyCreate && keyInfoOptional.isEmpty()) {
+            logger.info("Creating key for namespace '{}' with name '{}'", namespace, namespaceKey);
+            keyInfoOptional = Optional.of(ipfs.key.gen(namespaceKey, Optional.empty(), Optional.empty()));
         }
         return keyInfoOptional;
     }
 
     private void refreshNamespace() throws IOException {
         logger.info("Refreshing IPNS {} at {}...", namespace, nsRoot);
-        Optional<Multihash> res = resolveName(namespace);
+        Optional<Cid> res = resolveName(namespace);
         if (res.isPresent()) {
-            Multihash namespaceCid = res.orElseThrow();
+            Cid namespaceCid = res.orElseThrow();
             try {
                 ipfs.files.rm(nsRoot, true, true);
-                ipfs.files.cp("/ipfs/" + namespaceCid.toBase58(), nsRoot, true);
+                ipfs.files.cp("/ipfs/" + namespaceCid, nsRoot, true);
                 ipfs.pin.add(namespaceCid);
                 ipfs.pin.verify(false, false);
                 logger.info("Refreshed IPNS {} at {} to {}...", namespace, nsRoot, namespaceCid);
             } catch (Exception e) {
                 // not yet published?; ignore
-                logger.debug("Could not refresh IPNS {}", namespaceCid);
+                logger.info("Could not refresh IPNS {}: {}", namespaceCid, e.getMessage());
             }
         } else {
-            logger.info("Not refreshed: key '{}' not available and not allowed to create it", namespaceKey);
+            logger.info("Not refreshed: namespace '{}' not resolvable", namespace);
         }
     }
 
@@ -188,8 +211,8 @@ public class IpfsNamespacePublisherImpl implements IpfsNamespacePublisher {
         logger.info("Publishing IPNS {} at {}...", namespace, nsRoot);
         Optional<Stat> stat = doStatAbs(nsRoot);
         if (stat.isPresent()) {
-            Multihash cid = stat.orElseThrow().hash();
-            Optional<KeyInfo> keyInfo = getOrCreateKey(namespaceKey, namespaceKeyCreate);
+            Cid cid = stat.orElseThrow().hash();
+            Optional<KeyInfo> keyInfo = getOrCreateKey();
             if (keyInfo.isPresent()) {
                 ipfs.pin.add(cid);
                 Map publish = ipfs.name.publish(cid, Optional.of(keyInfo.orElseThrow().name));

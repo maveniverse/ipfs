@@ -44,7 +44,7 @@ import org.testcontainers.utility.DockerImageName;
 /**
  */
 @Testcontainers(disabledWithoutDocker = true)
-public class IpfsTransporterTest {
+class IpfsTransporterTest {
     public static final DockerImageName IPFS_KUBO_IMAGE = DockerImageName.parse("ipfs/kubo:release");
 
     public static GenericContainer<?> kubo = new GenericContainer<>(IPFS_KUBO_IMAGE).withExposedPorts(5001);
@@ -86,7 +86,7 @@ public class IpfsTransporterTest {
         return new RemoteRepository.Builder("testtest", "default", url).build();
     }
 
-    private void newTransporter(String url) throws Exception {
+    private void newTransporter(String url, boolean refresh, boolean publish) throws Exception {
         if (transporter != null) {
             transporter.close();
             transporter = null;
@@ -94,14 +94,14 @@ public class IpfsTransporterTest {
         if (factory == null) {
             factory = new IpfsTransporterFactory(new IpfsNamespacePublisherRegistryImpl(new IpfsFactoryImpl()));
         }
-        if (session == null) {
-            session = TestUtils.newSession();
-            // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
-            session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
-            session.setConfigProperty("aether.transport.ipfs.filesPrefix", "tmp");
-            session.setConfigProperty("aether.transport.ipfs.refreshNamespace", "false");
-            session.setConfigProperty("aether.transport.ipfs.publishNamespace", "false");
-        }
+        session = TestUtils.newSession();
+        // session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/5001");
+        session.setConfigProperty("aether.transport.ipfs.multiaddr", "/ip4/127.0.0.1/tcp/" + kuboPort);
+        session.setConfigProperty("aether.transport.ipfs.filesPrefix", "tmp");
+        session.setConfigProperty("aether.transport.ipfs.transportClosePublisher", "true"); // for testing
+        session.setConfigProperty("aether.transport.ipfs.refreshNamespace", Boolean.toString(refresh));
+        session.setConfigProperty("aether.transport.ipfs.publishNamespace", Boolean.toString(publish));
+
         transporter = factory.newInstance(session, newRepo(url));
     }
 
@@ -110,7 +110,7 @@ public class IpfsTransporterTest {
             tempDir = TestFileUtils.createTempDir().toPath();
             Files.createDirectories(tempDir);
 
-            newTransporter(useCase.remoteRepositoryUri);
+            newTransporter(useCase.remoteRepositoryUri, false, false);
             transporter.put(new PutTask(URI.create("file.txt")).setDataString("testtest"));
             transporter.put(new PutTask(URI.create("some%20space.txt")).setDataString("spacespace"));
         } catch (Exception e) {
@@ -424,6 +424,6 @@ public class IpfsTransporterTest {
 
     @Test
     void testInit_BadProtocol() {
-        assertThrows(NoTransporterException.class, () -> newTransporter("bad:/void"));
+        assertThrows(NoTransporterException.class, () -> newTransporter("bad:/void", false, false));
     }
 }

@@ -87,4 +87,17 @@ public final class IpfsTransporterConfigurationKeys {
     public static final String CONFIG_PROP_NAMESPACE_KEY_CREATE = CONFIG_PROPS_PREFIX + "namespaceKeyCreate";
 
     public static final boolean DEFAULT_NAMESPACE_KEY_CREATE = true;
+
+    /**
+     * Whether to close publisher when transport is closed. This config is really only to help testing, as in reality
+     * it is extension that should close all publishers at the session end.
+     *
+     * @configurationSource {@link RepositorySystemSession#getConfigProperties()}
+     * @configurationType {@link Boolean}
+     * @configurationDefaultValue {@link #DEFAULT_TRANSPORT_CLOSE_PUBLISHER}
+     * @configurationRepoIdSuffix Yes
+     */
+    public static final String CONFIG_PROP_TRANSPORT_CLOSE_PUBLISHER = CONFIG_PROPS_PREFIX + "transportClosePublisher";
+
+    public static final boolean DEFAULT_TRANSPORT_CLOSE_PUBLISHER = false;
 }
