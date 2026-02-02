@@ -19,7 +19,7 @@
 
   <groupId>eu.maveniverse.maven.ipfs</groupId>
   <artifactId>ipfs</artifactId>
-  <version>0.2.1-SNAPSHOT</version>
+  <version>0.2.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
@@ -58,7 +58,7 @@
   </ciManagement>
 
   <properties>
-    <project.build.outputTimestamp>2026-01-18T18:07:41Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-01-21T20:38:16Z</project.build.outputTimestamp>
 
     <!--
     Build time: Maven 3.9 and Java 21+
@@ -96,7 +96,7 @@
       <dependency>
         <groupId>com.github.ipfs</groupId>
         <artifactId>java-ipfs-http-client</artifactId>
-        <version>1.4.4</version>
+        <version>1.5.1</version>
       </dependency>
 
       <!-- Logging (except API, runtime only) -->

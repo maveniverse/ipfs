@@ -8,7 +8,7 @@
 package eu.maveniverse.maven.ipfs.core;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
+import org.eclipse.aether.RepositorySystemSession;
 
 /**
  * Namespace publisher registry.
@@ -18,7 +18,7 @@ public interface IpfsNamespacePublisherRegistry {
      * Acquires instance of {@link IpfsNamespacePublisher}, never {@code null}.
      */
     IpfsNamespacePublisher acquire(
-            ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers,
+            RepositorySystemSession session,
             String multiaddr,
             String namespace,
             String filesPrefix,
@@ -32,5 +32,5 @@ public interface IpfsNamespacePublisherRegistry {
     /**
      * Cleans up all namespaces.
      */
-    void closeAll(ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers) throws IOException;
+    void closeAll(RepositorySystemSession session) throws IOException;
 }

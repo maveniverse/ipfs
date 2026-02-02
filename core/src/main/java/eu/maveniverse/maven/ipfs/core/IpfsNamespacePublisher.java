@@ -7,6 +7,7 @@
  */
 package eu.maveniverse.maven.ipfs.core;
 
+import io.ipfs.cid.Cid;
 import io.ipfs.multihash.Multihash;
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,21 +31,21 @@ public interface IpfsNamespacePublisher extends Closeable {
         /**
          * Returns the CID of node.
          */
-        default Multihash hash() {
-            return Multihash.decode((String) stat().get("Hash"));
+        default Cid hash() {
+            return Cid.decode((String) stat().get("Hash"));
         }
 
         /**
          * Returns the size of node (makes sense for files).
          */
-        default Long size() {
+        default long size() {
             return Long.parseLong(String.valueOf(stat().getOrDefault("Size", "0")));
         }
 
         /**
          * Returns the cumulative size of node.
          */
-        default Long cumulativeSize() {
+        default long cumulativeSize() {
             return Long.parseLong(String.valueOf(stat().getOrDefault("CumulativeSize", "0")));
         }
 
