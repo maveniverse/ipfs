@@ -10,8 +10,10 @@ package eu.maveniverse.maven.ipfs.transport;
 import static java.util.Objects.requireNonNull;
 
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Optional;
 import org.eclipse.aether.spi.connector.transport.AbstractTransporter;
 import org.eclipse.aether.spi.connector.transport.GetTask;
@@ -23,9 +25,11 @@ import org.eclipse.aether.spi.connector.transport.PutTask;
  */
 final class IpfsTransporter extends AbstractTransporter {
     private final IpfsNamespacePublisher publisher;
+    private final boolean closePublisher;
 
-    IpfsTransporter(IpfsNamespacePublisher publisher) {
+    IpfsTransporter(IpfsNamespacePublisher publisher, boolean closePublisher) {
         this.publisher = requireNonNull(publisher);
+        this.closePublisher = closePublisher;
     }
 
     @Override
@@ -71,5 +75,13 @@ final class IpfsTransporter extends AbstractTransporter {
     }
 
     @Override
-    protected void implClose() {}
+    protected void implClose() {
+        if (closePublisher) {
+            try {
+                publisher.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException("Publisher close failed", e);
+            }
+        }
+    }
 }

@@ -15,10 +15,13 @@ import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import org.eclipse.aether.RepositorySystemSession;
 
 @Singleton
 @Named
@@ -32,7 +35,7 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
 
     @Override
     public IpfsNamespacePublisher acquire(
-            ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers,
+            RepositorySystemSession session,
             String multiaddr,
             String namespace,
             String filesPrefix,
@@ -43,7 +46,8 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
             boolean publishNamespace)
             throws IOException {
         try {
-            return sessionPublishers.computeIfAbsent(namespaceKey, k -> {
+            ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers = sessionPublishers(session);
+            return sessionPublishers.computeIfAbsent(namespace, k -> {
                 try {
                     return new IpfsNamespacePublisherImpl(
                             ipfsFactory.create(multiaddr),
@@ -53,7 +57,10 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
                             namespaceKey,
                             namespaceKeyCreate,
                             refreshNamespace,
-                            publishNamespace);
+                            publishNamespace,
+                            () -> {
+                                sessionPublishers.remove(namespace);
+                            });
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -64,9 +71,11 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
     }
 
     @Override
-    public void closeAll(ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers) throws IOException {
+    public void closeAll(RepositorySystemSession session) throws IOException {
         ArrayList<IOException> ioExceptions = new ArrayList<>();
-        for (IpfsNamespacePublisher publisher : sessionPublishers.values()) {
+        // we close all; but the map will be modified by onClose callback, so copy first
+        for (IpfsNamespacePublisher publisher :
+                List.copyOf(sessionPublishers(session).values())) {
             try {
                 publisher.close();
             } catch (IOException e) {
@@ -78,5 +87,11 @@ public class IpfsNamespacePublisherRegistryImpl implements IpfsNamespacePublishe
             ioExceptions.forEach(ex::addSuppressed);
             throw ex;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, IpfsNamespacePublisher> sessionPublishers(RepositorySystemSession session) {
+        return (ConcurrentMap<String, IpfsNamespacePublisher>) session.getData()
+                .computeIfAbsent(IpfsNamespacePublisherRegistry.class.getName(), ConcurrentHashMap::new);
     }
 }

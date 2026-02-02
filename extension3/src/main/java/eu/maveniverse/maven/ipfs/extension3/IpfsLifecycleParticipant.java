@@ -9,11 +9,8 @@ package eu.maveniverse.maven.ipfs.extension3;
 
 import static java.util.Objects.requireNonNull;
 
-import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisher;
 import eu.maveniverse.maven.ipfs.core.IpfsNamespacePublisherRegistry;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -34,13 +31,10 @@ public class IpfsLifecycleParticipant extends AbstractMavenLifecycleParticipant 
         this.registry = requireNonNull(registry);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void afterSessionEnd(MavenSession session) throws MavenExecutionException {
         try {
-            registry.closeAll((ConcurrentMap<String, IpfsNamespacePublisher>) session.getRepositorySession()
-                    .getData()
-                    .computeIfAbsent(IpfsNamespacePublisherRegistry.class.getName(), ConcurrentHashMap::new));
+            registry.closeAll(session.getRepositorySession());
         } catch (IOException e) {
             throw new MavenExecutionException("Failed Namespace publishing", e);
         }
