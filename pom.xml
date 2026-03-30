@@ -196,8 +196,8 @@
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
+      <id>maveniverse-ipfs</id>
+      <url>ipfs:/ipfs.maveniverse.eu/repository-ipfs</url>
     </repository>
   </repositories>
 
