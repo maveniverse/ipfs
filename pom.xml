@@ -14,7 +14,7 @@
   <parent>
     <groupId>eu.maveniverse.maven.parent</groupId>
     <artifactId>parent</artifactId>
-    <version>49</version>
+    <version>55</version>
   </parent>
 
   <groupId>eu.maveniverse.maven.ipfs</groupId>
@@ -68,7 +68,7 @@
 
     <!-- Dependency versions -->
     <version.maven>3.9.16</version.maven>
-    <version.resolver>1.9.25</version.resolver>
+    <version.resolver>1.9.27</version.resolver>
     <version.slf4j>1.7.36</version.slf4j>
     <version.junit>6.1.0</version.junit>
   </properties>
